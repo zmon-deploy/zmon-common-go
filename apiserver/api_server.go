@@ -6,7 +6,6 @@ import (
 	"github.com/cnpst/zmon-common-go/log"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -16,7 +15,7 @@ type Controller interface {
 	Route(e *echo.Echo)
 }
 
-func StartApiServer(logger log.Logger, controllers []Controller, port int) (func(), error) {
+func StartApiServer(logger log.Logger, controllers []Controller, port int) func() {
 	e := echo.New()
 	e.HTTPErrorHandler = getErrorHandler(logger)
 	e.Use(middleware.Recover())
@@ -26,9 +25,11 @@ func StartApiServer(logger log.Logger, controllers []Controller, port int) (func
 		controller.Route(e)
 	}
 
-	if err := e.Start(fmt.Sprintf(":%d", port)); err != nil {
-		return nil, errors.Wrap(err, "Failed to start echo server")
-	}
+	go func() {
+		if err := e.Start(fmt.Sprintf(":%d", port)); err != nil {
+			logger.Errorf("failed to start echo server: %s", err.Error())
+		}
+	}()
 
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
@@ -36,7 +37,7 @@ func StartApiServer(logger log.Logger, controllers []Controller, port int) (func
 		if err := e.Shutdown(ctx); err != nil {
 			logger.Errorf("failed to shutdown api server: %s", err.Error())
 		}
-	}, nil
+	}
 }
 
 func getErrorHandler(logger log.Logger) func(err error, ctx echo.Context) {
