@@ -7,7 +7,7 @@ import (
 )
 
 type KafkaPublisher interface {
-	Publish(topic string, messages []*sarama.ProducerMessage) error
+	Publish(messages []*sarama.ProducerMessage) error
 	PublishMetric(topic, measurement string, tags map[string]string, fields map[string]interface{}, tm time.Time) error
 	Close() error
 }
@@ -38,7 +38,7 @@ type kafkaPublisher struct {
 	producer sarama.SyncProducer
 }
 
-func (p *kafkaPublisher) Publish(topic string, messages []*sarama.ProducerMessage) error {
+func (p *kafkaPublisher) Publish(messages []*sarama.ProducerMessage) error {
 	if err := p.producer.SendMessages(messages); err != nil {
 		return errors.Wrap(err, "failed to send message")
 	}
@@ -57,10 +57,9 @@ func (p *kafkaPublisher) PublishMetric(topic, measurement string, tags map[strin
 		Value: sarama.ByteEncoder(encoded),
 	}
 
-	return p.Publish(topic, []*sarama.ProducerMessage{message})
+	return p.Publish([]*sarama.ProducerMessage{message})
 }
 
 func (p *kafkaPublisher) Close() error {
 	return p.producer.Close()
 }
-
