@@ -4,14 +4,14 @@ import (
 	"context"
 	"github.com/Shopify/sarama"
 	"github.com/cnpst/zmon-common-go/log"
-	"github.com/cnpst/zmon-common-go/misc"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	"time"
 )
 
+type OnKafkaMessage func(message *sarama.ConsumerMessage)
+
 type KafkaSubscriber interface {
-	Subscribe(topics []string, consumerGroup string) (<-chan *sarama.ConsumerMessage, context.CancelFunc, error)
+	Subscribe(topics []string, consumerGroup string, onMessage OnKafkaMessage) error
 	Close()
 }
 
@@ -20,7 +20,6 @@ func NewKafkaSubscriber(brokers []string, config *sarama.Config, logger log.Logg
 		logger:  log.NonNullLogger(logger),
 		brokers: brokers,
 		config:  config,
-		cancels: map[uuid.UUID]context.CancelFunc{},
 	}
 }
 
@@ -40,26 +39,24 @@ type kafkaSubscriber struct {
 	logger  log.Logger
 	brokers []string
 	config  *sarama.Config
-	cancels map[uuid.UUID]context.CancelFunc
+	cancel  context.CancelFunc
 }
 
-func (s *kafkaSubscriber) Subscribe(topics []string, consumerGroup string) (<-chan *sarama.ConsumerMessage, context.CancelFunc, error) {
-	output := make(chan *sarama.ConsumerMessage)
-	ctx, cancel := context.WithCancel(context.Background())
+func (s *kafkaSubscriber) Subscribe(topics []string, consumerGroup string, onMessage OnKafkaMessage) error {
+	var ctx context.Context
+	ctx, s.cancel = context.WithCancel(context.Background())
 
-	if err := s.consumeMessage(ctx, topics, consumerGroup, output); err != nil {
-		return nil, nil, err
+	if err := s.consumeMessage(ctx, topics, consumerGroup, onMessage); err != nil {
+		return err
 	}
 
-	return output, s.holdCancelFn(cancel), nil
+	return nil
 }
 
-func (s *kafkaSubscriber) consumeMessage(ctx context.Context, topics []string, consumerGroup string, output chan<- *sarama.ConsumerMessage) error {
+func (s *kafkaSubscriber) consumeMessage(ctx context.Context, topics []string, consumerGroup string, onMessage OnKafkaMessage) error {
 	handler := &consumerGroupHandler{
-		ctx: ctx,
-		onMessage: func(message *sarama.ConsumerMessage) {
-			output <- message
-		},
+		ctx:       ctx,
+		onMessage: onMessage,
 	}
 
 	consumer, err := sarama.NewConsumerGroup(s.brokers, consumerGroup, s.config)
@@ -98,21 +95,8 @@ func (s *kafkaSubscriber) consumeMessage(ctx context.Context, topics []string, c
 	return nil
 }
 
-func (s *kafkaSubscriber) holdCancelFn(cancel context.CancelFunc) context.CancelFunc {
-	uid := misc.UUID()
-	s.cancels[uid] = cancel
-	clear := func() {
-		cancel()
-		delete(s.cancels, uid)
-	}
-	return clear
-}
-
 func (s *kafkaSubscriber) Close() {
-	cancels := s.cancels
-	s.cancels = map[uuid.UUID]context.CancelFunc{}
-
-	for _, cancel := range cancels {
-		cancel()
+	if s.cancel != nil {
+		s.cancel()
 	}
 }
