@@ -15,12 +15,14 @@ func NewApp() *App {
 	return &App{}
 }
 
-func (a *App) OnStart(onStart func() error) {
+func (a *App) OnStart(onStart func() error) *App {
 	a.onStart = onStart
+	return a
 }
 
-func (a *App) OnStop(onStop func() error) {
+func (a *App) OnStop(onStop func() error) *App {
 	a.onStop = onStop
+	return a
 }
 
 func (a *App) Start() {
