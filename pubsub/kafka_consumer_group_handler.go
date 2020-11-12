@@ -28,6 +28,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				return nil // stop
 			}
 			h.onMessage(message)
+			session.MarkMessage(message, "")
 		}
 	}
 }
