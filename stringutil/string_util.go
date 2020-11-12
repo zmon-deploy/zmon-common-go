@@ -42,3 +42,40 @@ func GetRandomString(len int) string {
 	}
 	return string(bytes)
 }
+
+func IsStringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+func IsStringsEquals(a []string, b []string) bool {
+	if (a == nil) != (b == nil) {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func RemoveFromStrings(s []string, r string) []string {
+	result := []string{}
+	for _, v := range s {
+		if v != r {
+			result = append(result, v)
+		}
+	}
+	return result
+}
