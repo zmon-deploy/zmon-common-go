@@ -18,6 +18,19 @@ func (c *dummyConsumerGroupClaim) InitialOffset() int64                     { re
 func (c *dummyConsumerGroupClaim) HighWaterMarkOffset() int64               { return 0 }
 func (c *dummyConsumerGroupClaim) Messages() <-chan *sarama.ConsumerMessage { return c.ch }
 
+type dummyConsumerGroupSession struct{}
+
+func (s *dummyConsumerGroupSession) Claims() map[string][]int32                               { return nil }
+func (s *dummyConsumerGroupSession) MemberID() string                                         { return "" }
+func (s *dummyConsumerGroupSession) GenerationID() int32                                      { return 0 }
+func (s *dummyConsumerGroupSession) MarkOffset(topic string, partition int32, offset int64, metadata string) {
+}
+func (s *dummyConsumerGroupSession) Commit()                                                  {}
+func (s *dummyConsumerGroupSession) ResetOffset(topic string, partition int32, offset int64, metadata string) {
+}
+func (s *dummyConsumerGroupSession) MarkMessage(msg *sarama.ConsumerMessage, metadata string) {}
+func (s *dummyConsumerGroupSession) Context() context.Context                                 { return nil }
+
 func TestConsumeClaimShouldExitWhenContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	handler := consumerGroupHandler{ctx: ctx}
@@ -51,7 +64,7 @@ func TestConsumeClaimShouldPassMessage(t *testing.T) {
 	claim := &dummyConsumerGroupClaim{ch: ch}
 
 	go func() {
-		_ = handler.ConsumeClaim(nil, claim)
+		_ = handler.ConsumeClaim(&dummyConsumerGroupSession{}, claim)
 	}()
 
 	ch <- originalMessage
