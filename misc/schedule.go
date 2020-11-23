@@ -19,3 +19,13 @@ func Schedule(ctx context.Context, period time.Duration, fn func()) {
 	}()
 }
 
+func ScheduleWithInitialDelay(ctx context.Context, period, initialDelay time.Duration, fn func()) {
+	go func() {
+		select {
+		case <-time.After(initialDelay):
+			Schedule(ctx, period, fn)
+		case <-ctx.Done():
+			return
+		}
+	}()
+}
