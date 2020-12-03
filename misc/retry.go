@@ -1,30 +1,18 @@
 package misc
 
-type RetryFailedError struct{}
-
-func (e RetryFailedError) Error() string {
-	return "retry failed"
-}
-
 type retryer struct {
 	retryCount int
 }
 
-type retryFn func() (bool, error)
+type retryFn func() bool
 
-func (r *retryer) Do(callback retryFn) error {
+func (r *retryer) Do(callback retryFn) {
 	for i := 0; i < r.retryCount; i++ {
-		success, err := callback()
-
-		if err != nil && i == r.retryCount-1 {
-			return err
-		}
-		if success == true {
-			return nil
+		success := callback()
+		if success || i >= r.retryCount-1 {
+			return
 		}
 	}
-
-	return RetryFailedError{}
 }
 
 func Retry(retryCount int) *retryer {

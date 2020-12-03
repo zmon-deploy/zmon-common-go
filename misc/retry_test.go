@@ -9,18 +9,18 @@ import (
 func TestRetry(t *testing.T) {
 	retry := Retry(3)
 	counter := 0
-	_ = retry.Do(func() (bool, error) {
+	retry.Do(func() bool {
 		counter++
-		return false, nil
+		return false
 	})
 	require.Equal(t, 3, counter)
 
-	_ = retry.Do(func() (bool, error) {
+	retry.Do(func() bool {
 		counter++
 		if counter >= 5 {
-			return true, nil
+			return true
 		}
-		return false, nil
+		return false
 	})
 	require.Equal(t, 5, counter)
 }
