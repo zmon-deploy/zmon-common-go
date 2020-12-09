@@ -6,7 +6,8 @@ import (
 )
 
 func UUID() uuid.UUID {
-	return uuid.NewV4()
+	uid, _ := uuid.NewV4()
+	return uid
 }
 
 func UUIDString() string {
