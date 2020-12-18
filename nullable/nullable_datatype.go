@@ -21,6 +21,10 @@ func NewNullInt32(v *int32) NullInt32 {
 	}}
 }
 
+func NewNullInt32V(v int32) NullInt32 {
+	return NewNullInt32(&v)
+}
+
 func (v NullInt32) MarshalJSON() ([]byte, error) {
 	if v.Valid {
 		return json.Marshal(v.Int32)
@@ -57,6 +61,10 @@ func NewNullInt64(v *int64) NullInt64 {
 	}}
 }
 
+func NewNullInt64V(v int64) NullInt64 {
+	return NewNullInt64(&v)
+}
+
 func (v NullInt64) MarshalJSON() ([]byte, error) {
 	if v.Valid {
 		return json.Marshal(v.Int64)
@@ -91,6 +99,10 @@ func NewNullString(v *string) NullString {
 		String: *v,
 		Valid:  true,
 	}}
+}
+
+func NewNullStringV(v string) NullString {
+	return NewNullString(&v)
 }
 
 func (v NullString) MarshalJSON() ([]byte, error) {
