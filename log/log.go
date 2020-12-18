@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"os"
+	"time"
 )
 
 type LoggerFactory interface {
@@ -47,6 +48,8 @@ type Logger interface {
 	Warnf(string, ...interface{})
 	Error(...interface{})
 	Errorf(string, ...interface{})
+	Stopwatch(string) func()
+	Stopwatchf(string, ...interface{}) func()
 }
 
 type logger struct {
@@ -118,16 +121,31 @@ func (l *logger) Errorf(format string, args ...interface{}) {
 	l.sentryWrapper.CaptureException(errors.New(msg))
 }
 
+func (l *logger) Stopwatch(message string) func() {
+	started := time.Now()
+	l.Infof("STARTED: %s", message)
+
+	return func() {
+		l.Infof("DONE (%v): %s", time.Since(started), message)
+	}
+}
+
+func (l *logger) Stopwatchf(format string, args ...interface{}) func() {
+	return l.Stopwatch(fmt.Sprintf(format, args...))
+}
+
 type dummyLogger struct{}
 
-func (l *dummyLogger) Info(v ...interface{})                  {}
-func (l *dummyLogger) Infof(format string, v ...interface{})  {}
-func (l *dummyLogger) Debug(v ...interface{})                 {}
-func (l *dummyLogger) Debugf(format string, v ...interface{}) {}
-func (l *dummyLogger) Warn(v ...interface{})                  {}
-func (l *dummyLogger) Warnf(format string, v ...interface{})  {}
-func (l *dummyLogger) Error(v ...interface{})                 {}
-func (l *dummyLogger) Errorf(format string, v ...interface{}) {}
+func (l *dummyLogger) Info(v ...interface{})                             {}
+func (l *dummyLogger) Infof(format string, v ...interface{})             {}
+func (l *dummyLogger) Debug(v ...interface{})                            {}
+func (l *dummyLogger) Debugf(format string, v ...interface{})            {}
+func (l *dummyLogger) Warn(v ...interface{})                             {}
+func (l *dummyLogger) Warnf(format string, v ...interface{})             {}
+func (l *dummyLogger) Error(v ...interface{})                            {}
+func (l *dummyLogger) Errorf(format string, v ...interface{})            {}
+func (l *dummyLogger) Stopwatch(message string) func()                   { return nil }
+func (l *dummyLogger) Stopwatchf(format string, v ...interface{}) func() { return nil }
 
 func NonNullLogger(logger Logger) Logger {
 	if logger != nil {
