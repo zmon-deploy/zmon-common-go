@@ -87,6 +87,36 @@ func (v *NullInt64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type NullFloat64 struct {
+	sql.NullFloat64
+}
+
+func NewNullFloat64(v *float64) NullFloat64 {
+	if v == nil {
+		return NullFloat64{sql.NullFloat64{Valid: false}}
+	}
+	return NullFloat64{
+		sql.NullFloat64{
+			Float64: *v,
+			Valid:   true,
+		},
+	}
+}
+
+func (v *NullFloat64) UnmarshalJSON(data []byte) error {
+	var x *float64
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	if x != nil {
+		v.Valid = true
+		v.Float64 = *x
+	} else {
+		v.Valid = false
+	}
+	return nil
+}
+
 type NullString struct {
 	sql.NullString
 }
