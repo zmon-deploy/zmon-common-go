@@ -103,6 +103,10 @@ func NewNullFloat64(v *float64) NullFloat64 {
 	}
 }
 
+func NewNullFloat64V(v float64) NullFloat64 {
+	return NewNullFloat64(&v)
+}
+
 func (v *NullFloat64) UnmarshalJSON(data []byte) error {
 	var x *float64
 	if err := json.Unmarshal(data, &x); err != nil {
