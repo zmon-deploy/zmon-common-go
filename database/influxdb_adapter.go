@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"github.com/cnpst/zmon-common-go/stringutil"
+	"github.com/zmon-deploy/zmon-common-go/stringutil"
 	"github.com/influxdata/influxdb1-client/models"
 	influxdb "github.com/influxdata/influxdb1-client/v2"
 	"github.com/pkg/errors"

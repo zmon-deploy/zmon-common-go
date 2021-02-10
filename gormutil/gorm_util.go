@@ -1,7 +1,7 @@
 package gormutil
 
 import (
-	"github.com/cnpst/zmon-common-go/stringutil"
+	"github.com/zmon-deploy/zmon-common-go/stringutil"
 	"reflect"
 	"strings"
 )

@@ -1,7 +1,7 @@
 package stringutil
 
 import (
-	"github.com/cnpst/zmon-common-go/numberutil"
+	"github.com/zmon-deploy/zmon-common-go/numberutil"
 	"hash/fnv"
 	"regexp"
 	"strings"

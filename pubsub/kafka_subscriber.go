@@ -3,7 +3,7 @@ package pubsub
 import (
 	"context"
 	"github.com/Shopify/sarama"
-	"github.com/cnpst/zmon-common-go/log"
+	"github.com/zmon-deploy/zmon-common-go/log"
 	"github.com/pkg/errors"
 	"time"
 )

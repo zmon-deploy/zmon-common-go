@@ -1,4 +1,4 @@
-module github.com/cnpst/zmon-common-go
+module github.com/zmon-deploy/zmon-common-go
 
 go 1.15
 

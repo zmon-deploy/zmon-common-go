@@ -3,7 +3,7 @@ package log
 import (
 	"container/list"
 	"fmt"
-	"github.com/cnpst/zmon-common-go/timeutil"
+	"github.com/zmon-deploy/zmon-common-go/timeutil"
 	"sync"
 	"time"
 

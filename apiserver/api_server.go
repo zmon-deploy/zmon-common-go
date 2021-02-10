@@ -3,7 +3,7 @@ package apiserver
 import (
 	"context"
 	"fmt"
-	"github.com/cnpst/zmon-common-go/log"
+"github.com/zmon-deploy/zmon-common-go/log"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"io/ioutil"

@@ -1,7 +1,7 @@
 package misc
 
 import (
-	"github.com/cnpst/zmon-common-go/timeutil"
+	"github.com/zmon-deploy/zmon-common-go/timeutil"
 	"go.uber.org/multierr"
 	"time"
 )
