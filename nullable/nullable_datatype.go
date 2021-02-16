@@ -3,6 +3,7 @@ package nullable
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
 )
 
 // 기존 null 타입들에 json marshaling 관련 코드를 추가한 구조체
@@ -155,6 +156,42 @@ func (v *NullString) UnmarshalJSON(data []byte) error {
 	if x != nil {
 		v.Valid = true
 		v.String = *x
+	} else {
+		v.Valid = false
+	}
+	return nil
+}
+
+type NullTime struct {
+	sql.NullTime
+}
+
+func NewNullTime(t *time.Time) NullTime {
+	if t == nil {
+		return NullTime{sql.NullTime{Valid: false}}
+	}
+	return NullTime{sql.NullTime{
+		Time:  *t,
+		Valid: true,
+	}}
+}
+
+func (v NullTime) MarshalJSON() ([]byte, error) {
+	if v.Valid {
+		return json.Marshal(v.Time)
+	} else {
+		return json.Marshal(nil)
+	}
+}
+
+func (v *NullTime) UnmarshalJSON(data []byte) error {
+	var x *time.Time
+	if err := json.Unmarshal(data, &x); err != nil {
+		return err
+	}
+	if x != nil {
+		v.Valid = true
+		v.Time = *x
 	} else {
 		v.Valid = false
 	}
