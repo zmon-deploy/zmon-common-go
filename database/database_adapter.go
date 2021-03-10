@@ -2,8 +2,10 @@ package database
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/pkg/errors"
+	"gorm.io/gorm"
+	"gorm.io/driver/mysql"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 type DatabaseAdapter struct {
@@ -23,14 +25,20 @@ func NewDatabaseAdapter(server, user, password string, port int, database string
 		dataSource = dataSource + "&loc=Local"
 	}
 
-	conn, err := gorm.Open("mysql", dataSource)
+	conn, err := gorm.Open(mysql.Open(dataSource), &gorm.Config{
+		Logger: gormlogger.Discard,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	conn.LogMode(false)
-	conn.DB().SetMaxIdleConns(minConn)
-	conn.DB().SetMaxOpenConns(maxConn)
+	db, err := conn.DB()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get *sql.DB")
+	}
+
+	db.SetMaxIdleConns(minConn)
+	db.SetMaxOpenConns(maxConn)
 
 	return &DatabaseAdapter{DB: conn}, nil
 }
