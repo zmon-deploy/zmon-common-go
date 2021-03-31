@@ -1,6 +1,9 @@
 package misc
 
-import "net"
+import (
+	"net"
+	"os"
+)
 
 func GetIP() string {
 	addrs, err := net.InterfaceAddrs()
@@ -19,3 +22,10 @@ func GetIP() string {
 	return ""
 }
 
+func EnsureDirExist(dirPath string) {
+	if _, err := os.Stat(dirPath); err != nil {
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			panic(err)
+		}
+	}
+}
