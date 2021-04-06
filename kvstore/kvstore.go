@@ -6,6 +6,7 @@ import (
 	"github.com/zmon-deploy/zmon-common-go/misc"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type KvStore interface {
 }
 
 type kvStore struct {
+	sync.RWMutex
 	db *bbolt.DB
 }
 
@@ -30,6 +32,9 @@ func NewKvStore(dbFile string) (KvStore, error) {
 }
 
 func (s *kvStore) Init(buckets []string) error {
+	s.Lock()
+	defer s.Unlock()
+
 	return s.db.Update(func(tx *bbolt.Tx) error {
 		for _, bucket := range buckets {
 			if _, err := tx.CreateBucketIfNotExists([]byte(bucket)); err != nil {
@@ -41,6 +46,9 @@ func (s *kvStore) Init(buckets []string) error {
 }
 
 func (s *kvStore) Close() error {
+	s.Lock()
+	defer s.Unlock()
+
 	if err := s.db.Close(); err != nil {
 		return errors.Wrap(err, "failed to close db")
 	}
@@ -51,6 +59,9 @@ func (s *kvStore) Close() error {
 }
 
 func (s *kvStore) Write(bucket string, batches map[string][]byte) error {
+	s.Lock()
+	defer s.Unlock()
+
 	return s.db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
 		for key, value := range batches {
@@ -63,6 +74,9 @@ func (s *kvStore) Write(bucket string, batches map[string][]byte) error {
 }
 
 func (s *kvStore) Read(bucket, key string) ([]byte, error) {
+	s.RLock()
+	defer s.RUnlock()
+
 	var value []byte
 
 	if err := s.db.View(func(tx *bbolt.Tx) error {
