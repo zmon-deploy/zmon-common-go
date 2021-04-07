@@ -6,11 +6,7 @@ import (
 	"strings"
 )
 
-type errorable interface {
-	Error(...interface{})
-}
-
-func LogPanic(logger errorable) {
+func OnPanic(fn func(msg string)) {
 	if r := recover(); r != nil {
 		messages := []string{
 			fmt.Sprintf("panic: %s", r),
@@ -25,6 +21,7 @@ func LogPanic(logger errorable) {
 			fnName, file, line, ok = runtime.Caller(i)
 		}
 
-		logger.Error(strings.Join(messages, "\n"))
+		msg := strings.Join(messages, "\n")
+		fn(msg)
 	}
 }
