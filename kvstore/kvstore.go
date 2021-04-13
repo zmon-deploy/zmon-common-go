@@ -49,10 +49,12 @@ func (s *kvStore) Close() error {
 	s.Lock()
 	defer s.Unlock()
 
+	dbPath := s.db.Path()  // db.Close() 하면 path 값도 지워지기 때문에 미리 추출
+
 	if err := s.db.Close(); err != nil {
 		return errors.Wrap(err, "failed to close db")
 	}
-	if err := os.Remove(s.db.Path()); err != nil {
+	if err := os.Remove(dbPath); err != nil {
 		return errors.Wrap(err, "failed to remove db file")
 	}
 	return nil
