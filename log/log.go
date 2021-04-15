@@ -3,7 +3,6 @@ package log
 import (
 	"fmt"
 	nested "github.com/antonfisher/nested-logrus-formatter"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"os"
 	"time"
@@ -14,10 +13,9 @@ type LoggerFactory interface {
 }
 
 type loggerFactory struct {
-	sentryWrapper SentryWrapper
 }
 
-func NewLoggerFactory(sentryDSN, ver string) (LoggerFactory, error) {
+func NewLoggerFactory() (LoggerFactory, error) {
 	logrus.SetOutput(os.Stdout)
 	logrus.SetLevel(logrus.DebugLevel)
 	logrus.SetFormatter(&nested.Formatter{
@@ -25,18 +23,11 @@ func NewLoggerFactory(sentryDSN, ver string) (LoggerFactory, error) {
 		FieldsOrder: []string{"component", "category"},
 	})
 
-	sw, err := newSentryWrapper(sentryDSN, ver)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create sentry wrapper")
-	}
-
-	return &loggerFactory{
-		sentryWrapper: sw,
-	}, nil
+	return &loggerFactory{}, nil
 }
 
 func (f *loggerFactory) GetLogger(component string) Logger {
-	return newLogger(component, f.sentryWrapper)
+	return newLogger(component)
 }
 
 type Logger interface {
@@ -54,10 +45,9 @@ type Logger interface {
 
 type logger struct {
 	component     string
-	sentryWrapper SentryWrapper
 }
 
-func newLogger(component string, sentryWrapper SentryWrapper) Logger {
+func newLogger(component string) Logger {
 	logrus.SetOutput(os.Stdout)
 	logrus.SetLevel(logrus.DebugLevel)
 	logrus.SetFormatter(&nested.Formatter{
@@ -67,7 +57,6 @@ func newLogger(component string, sentryWrapper SentryWrapper) Logger {
 
 	return &logger{
 		component:     component,
-		sentryWrapper: sentryWrapper,
 	}
 }
 
@@ -109,16 +98,11 @@ func (l *logger) Warnf(format string, args ...interface{}) {
 func (l *logger) Error(args ...interface{}) {
 	arr := l.concatArgsWithComponent(args)
 	logrus.Error(arr...)
-
-	msg := fmt.Sprint(arr...)
-	l.sentryWrapper.CaptureException(errors.New(msg))
 }
 
 func (l *logger) Errorf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(l.mergeFormatWithComponent(format), args...)
 	logrus.Error(msg)
-
-	l.sentryWrapper.CaptureException(errors.New(msg))
 }
 
 func (l *logger) Stopwatch(message string) func() {
