@@ -48,6 +48,13 @@ func (v *NullInt32) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (v NullInt32) AsPtr() *int32 {
+	if v.Valid {
+		return &v.Int32
+	}
+	return nil
+}
+
 type NullInt64 struct {
 	sql.NullInt64
 }
@@ -84,6 +91,13 @@ func (v *NullInt64) UnmarshalJSON(data []byte) error {
 		v.Int64 = *x
 	} else {
 		v.Valid = false
+	}
+	return nil
+}
+
+func (v NullInt64) AsPtr() *int64 {
+	if v.Valid {
+		return &v.Int64
 	}
 	return nil
 }
@@ -130,6 +144,13 @@ func (v *NullFloat64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (v NullFloat64) AsPtr() *float64 {
+	if v.Valid {
+		return &v.Float64
+	}
+	return nil
+}
+
 type NullString struct {
 	sql.NullString
 }
@@ -170,6 +191,13 @@ func (v *NullString) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (v NullString) AsPtr() *string {
+	if v.Valid {
+		return &v.String
+	}
+	return nil
+}
+
 type NullTime struct {
 	sql.NullTime
 }
@@ -202,6 +230,13 @@ func (v *NullTime) UnmarshalJSON(data []byte) error {
 		v.Time = *x
 	} else {
 		v.Valid = false
+	}
+	return nil
+}
+
+func (v NullTime) AsPtr() *time.Time {
+	if v.Valid {
+		return &v.Time
 	}
 	return nil
 }
