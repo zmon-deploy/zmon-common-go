@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"github.com/segmentio/kafka-go"
-	"github.com/zmon-deploy/zmon-common-go/log"
 	"time"
 )
 
@@ -15,28 +14,26 @@ type KafkaSubscriber interface {
 	Close() error
 }
 
-func NewKafkaSubscriber(config kafka.ReaderConfig, logger log.Logger) KafkaSubscriber {
+func NewKafkaSubscriber(config kafka.ReaderConfig) KafkaSubscriber {
 	return &kafkaSubscriber{
-		logger:  log.NonNullLogger(logger),
 		reader: kafka.NewReader(config),
 	}
 }
 
 func DefaultConsumerConfig(brokers []string, consumerGroup string, topics []string) kafka.ReaderConfig {
 	return kafka.ReaderConfig{
-		Brokers: brokers,
-		GroupID: consumerGroup,
-		GroupTopics: topics,
-		MinBytes: 10e3,
-		MaxBytes: 10e6,
+		Brokers:        brokers,
+		GroupID:        consumerGroup,
+		GroupTopics:    topics,
+		MinBytes:       10e3,
+		MaxBytes:       10e6,
 		CommitInterval: 5 * time.Second,
 		GroupBalancers: []kafka.GroupBalancer{Balancer{}},
-		StartOffset: kafka.FirstOffset,
+		StartOffset:    kafka.FirstOffset,
 	}
 }
 
 type kafkaSubscriber struct {
-	logger  log.Logger
 	reader *kafka.Reader
 }
 
