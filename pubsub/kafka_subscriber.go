@@ -2,101 +2,62 @@ package pubsub
 
 import (
 	"context"
-	"github.com/Shopify/sarama"
-	"github.com/zmon-deploy/zmon-common-go/log"
 	"github.com/pkg/errors"
+	"github.com/segmentio/kafka-go"
+	"github.com/zmon-deploy/zmon-common-go/log"
 	"time"
 )
 
-type OnKafkaMessage func(message *sarama.ConsumerMessage)
+type OnKafkaMessage func(message kafka.Message)
 
 type KafkaSubscriber interface {
-	Subscribe(topics []string, consumerGroup string, onMessage OnKafkaMessage) error
-	Close()
+	Subscribe(ctx context.Context, onMessage OnKafkaMessage) error
+	Close() error
 }
 
-func NewKafkaSubscriber(brokers []string, config *sarama.Config, logger log.Logger) KafkaSubscriber {
+func NewKafkaSubscriber(config kafka.ReaderConfig, logger log.Logger) KafkaSubscriber {
 	return &kafkaSubscriber{
 		logger:  log.NonNullLogger(logger),
-		brokers: brokers,
-		config:  config,
+		reader: kafka.NewReader(config),
 	}
 }
 
-func DefaultConsumerConfig() *sarama.Config {
-	config := sarama.NewConfig()
-	config.Version = sarama.V1_1_0_0
-	config.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategySticky
-	config.Consumer.Offsets.Initial = sarama.OffsetOldest
-	config.Consumer.Offsets.AutoCommit.Enable = true
-	config.Consumer.Offsets.AutoCommit.Interval = 10 * time.Second
-	config.Consumer.Offsets.Retry.Max = 10
-
-	return config
+func DefaultConsumerConfig(brokers []string, consumerGroup string, topics []string) kafka.ReaderConfig {
+	return kafka.ReaderConfig{
+		Brokers: brokers,
+		GroupID: consumerGroup,
+		GroupTopics: topics,
+		MinBytes: 10e3,
+		MaxBytes: 10e6,
+		CommitInterval: 5 * time.Second,
+		GroupBalancers: []kafka.GroupBalancer{Balancer{}},
+		StartOffset: kafka.FirstOffset,
+	}
 }
 
 type kafkaSubscriber struct {
 	logger  log.Logger
-	brokers []string
-	config  *sarama.Config
-	cancel  context.CancelFunc
+	reader *kafka.Reader
 }
 
-func (s *kafkaSubscriber) Subscribe(topics []string, consumerGroup string, onMessage OnKafkaMessage) error {
-	var ctx context.Context
-	ctx, s.cancel = context.WithCancel(context.Background())
+func (s *kafkaSubscriber) Subscribe(ctx context.Context, onMessage OnKafkaMessage) error {
+	for {
+		m, err := s.reader.ReadMessage(ctx)
+		if err != nil {
+			if err.Error() != "context canceled" {
+				return errors.Wrap(err, "failed to read message")
+			}
+			break
+		}
 
-	if err := s.consumeMessage(ctx, topics, consumerGroup, onMessage); err != nil {
-		return err
+		onMessage(m)
 	}
-
 	return nil
 }
 
-func (s *kafkaSubscriber) consumeMessage(ctx context.Context, topics []string, consumerGroup string, onMessage OnKafkaMessage) error {
-	handler := &consumerGroupHandler{
-		ctx:       ctx,
-		onMessage: onMessage,
+func (s *kafkaSubscriber) Close() error {
+	if err := s.reader.Close(); err != nil {
+		return errors.Wrap(err, "failed to close reader")
 	}
-
-	consumer, err := sarama.NewConsumerGroup(s.brokers, consumerGroup, s.config)
-	if err != nil {
-		return errors.Wrap(err, "failed to create consumer")
-	}
-
-	go func() {
-		for ctx.Err() == nil {
-			if err := consumer.Consume(ctx, topics, handler); err != nil {
-				if err == sarama.ErrUnknown {
-					// ignore, because it's often just noise
-				} else {
-					s.logger.Errorf("failed to consume with client: %s", err.Error())
-				}
-				time.Sleep(time.Second)
-			}
-		}
-
-		if err := consumer.Close(); err != nil {
-			s.logger.Errorf("failed to close consumer client: %s", err.Error())
-		}
-	}()
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-consumer.Errors():
-				s.logger.Errorf("error found on kafka consumer: %s", err.Error())
-			}
-		}
-	}()
-
 	return nil
-}
-
-func (s *kafkaSubscriber) Close() {
-	if s.cancel != nil {
-		s.cancel()
-	}
 }

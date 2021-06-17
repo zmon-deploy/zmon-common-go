@@ -1,65 +1,58 @@
 package pubsub
 
 import (
-	"github.com/Shopify/sarama"
+	"context"
 	"github.com/pkg/errors"
+	"github.com/segmentio/kafka-go"
 	"time"
 )
 
 type KafkaPublisher interface {
-	Publish(messages []*sarama.ProducerMessage) error
-	PublishMetric(topic, measurement string, tags map[string]string, fields map[string]interface{}, tm time.Time) error
+	Publish(ctx context.Context, messages ...kafka.Message) error
+	PublishMetric(ctx context.Context, topic, measurement string, tags map[string]string, fields map[string]interface{}, tm time.Time) error
 	Close() error
 }
 
-func NewKafkaPublisher(brokers []string, config *sarama.Config) (KafkaPublisher, error) {
-	producer, err := sarama.NewSyncProducer(brokers, config)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kafka sync producer")
-	}
-
+func NewKafkaPublisher(brokers []string, topic string) KafkaPublisher {
 	return &kafkaPublisher{
-		producer: producer,
-	}, nil
-}
-
-func DefaultProducerConfig(clientID string) *sarama.Config {
-	kafkaConfig := sarama.NewConfig()
-	kafkaConfig.ClientID = clientID
-	kafkaConfig.Producer.RequiredAcks = sarama.WaitForAll
-	kafkaConfig.Producer.Compression = sarama.CompressionNone
-	kafkaConfig.Producer.Retry.Max = 3
-	kafkaConfig.Producer.Return.Successes = true
-
-	return kafkaConfig
+		writer: &kafka.Writer{
+			Addr:     kafka.TCP(brokers...),
+			Topic:    topic,
+			Balancer: &kafka.LeastBytes{},
+			Async:    false,
+		},
+	}
 }
 
 type kafkaPublisher struct {
-	producer sarama.SyncProducer
+	writer *kafka.Writer
 }
 
-func (p *kafkaPublisher) Publish(messages []*sarama.ProducerMessage) error {
-	if err := p.producer.SendMessages(messages); err != nil {
-		return errors.Wrap(err, "failed to send message")
+func (p *kafkaPublisher) Publish(ctx context.Context, messages ...kafka.Message) error {
+	if err := p.writer.WriteMessages(ctx, messages...); err != nil {
+		return errors.Wrap(err, "failed to write messages")
 	}
 
 	return nil
 }
 
-func (p *kafkaPublisher) PublishMetric(topic, measurement string, tags map[string]string, fields map[string]interface{}, tm time.Time) error {
+func (p *kafkaPublisher) PublishMetric(ctx context.Context, topic, measurement string, tags map[string]string, fields map[string]interface{}, tm time.Time) error {
 	encoded, err := encodeLineProtocol(measurement, tags, fields, tm)
 	if err != nil {
 		return errors.Wrap(err, "failed to encode line protocol")
 	}
 
-	message := &sarama.ProducerMessage{
+	message := kafka.Message{
 		Topic: topic,
-		Value: sarama.ByteEncoder(encoded),
+		Value: encoded,
 	}
 
-	return p.Publish([]*sarama.ProducerMessage{message})
+	return p.Publish(ctx, message)
 }
 
 func (p *kafkaPublisher) Close() error {
-	return p.producer.Close()
+	if err := p.writer.Close(); err != nil {
+		return errors.Wrap(err, "failed to close writer")
+	}
+	return nil
 }
