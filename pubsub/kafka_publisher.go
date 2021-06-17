@@ -13,11 +13,10 @@ type KafkaPublisher interface {
 	Close() error
 }
 
-func NewKafkaPublisher(brokers []string, topic string) KafkaPublisher {
+func NewKafkaPublisher(brokers []string) KafkaPublisher {
 	return &kafkaPublisher{
 		writer: &kafka.Writer{
 			Addr:     kafka.TCP(brokers...),
-			Topic:    topic,
 			Balancer: &kafka.LeastBytes{},
 			Async:    false,
 		},
@@ -28,6 +27,7 @@ type kafkaPublisher struct {
 	writer *kafka.Writer
 }
 
+// 각 message 별로 topic 이 명시되어야 함
 func (p *kafkaPublisher) Publish(ctx context.Context, messages ...kafka.Message) error {
 	if err := p.writer.WriteMessages(ctx, messages...); err != nil {
 		return errors.Wrap(err, "failed to write messages")
