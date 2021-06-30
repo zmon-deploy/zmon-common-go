@@ -19,3 +19,16 @@ func TestWithLog(t *testing.T) {
 	fields := FieldsFromContextAsLine(ctx)
 	require.Equal(t, "[first log: hello], [second log: world], [another: true], [log: false]", fields)
 }
+
+func TestClone(t *testing.T) {
+	originalCtx := WithContextField(context.Background())
+	AppendField(originalCtx, "1", "1")
+	AppendField(originalCtx, "who", "original")
+	AppendField(originalCtx, "2", "2")
+
+	clonedCtx := Clone(originalCtx)
+	AppendField(clonedCtx, "who", "cloned")
+
+	require.Equal(t, "[1: 1], [who: original], [2: 2]", FieldsFromContextAsLine(originalCtx))
+	require.Equal(t, "[1: 1], [2: 2], [who: cloned]", FieldsFromContextAsLine(clonedCtx))
+}

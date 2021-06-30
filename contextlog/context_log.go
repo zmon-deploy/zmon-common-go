@@ -62,6 +62,10 @@ func AppendFields(ctx context.Context, keys []string, values ...interface{}) {
 	}
 }
 
+func Clone(ctx context.Context) context.Context {
+	return RestoreFromContextFields(FieldsFromContext(ctx))
+}
+
 type ContextFields struct {
 	Data        map[string]interface{} `json:"data"`
 	KeysInOrder []string               `json:"keysInOrder"`
@@ -75,6 +79,10 @@ func newContextFields() *ContextFields {
 }
 
 func (f *ContextFields) Append(key string, value interface{}) {
+	if index := f.indexOf(key); index != -1 {
+		f.KeysInOrder = append(f.KeysInOrder[:index], f.KeysInOrder[index+1:]...)
+	}
+
 	f.KeysInOrder = append(f.KeysInOrder, key)
 	f.Data[key] = value
 }
@@ -89,3 +97,11 @@ func (f *ContextFields) Len() int {
 	return len(f.KeysInOrder)
 }
 
+func (f *ContextFields) indexOf(key string) int {
+	for i, keyInOrder := range f.KeysInOrder {
+		if keyInOrder == key {
+			return i
+		}
+	}
+	return -1
+}
