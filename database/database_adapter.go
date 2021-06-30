@@ -3,8 +3,8 @@ package database
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 )
 
