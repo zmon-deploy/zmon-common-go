@@ -89,7 +89,7 @@ func (l *logger) Infof(format string, args ...interface{}) {
 }
 
 func (l *logger) Debug(args ...interface{}) {
-	logrus.Debug(l.generateMessage(args)...)
+	logrus.Debug(l.generateMessage(args...)...)
 }
 
 func (l *logger) Debugf(format string, args ...interface{}) {
@@ -97,7 +97,7 @@ func (l *logger) Debugf(format string, args ...interface{}) {
 }
 
 func (l *logger) Warn(args ...interface{}) {
-	logrus.Warn(l.generateMessage(args)...)
+	logrus.Warn(l.generateMessage(args...)...)
 }
 
 func (l *logger) Warnf(format string, args ...interface{}) {
@@ -105,7 +105,7 @@ func (l *logger) Warnf(format string, args ...interface{}) {
 }
 
 func (l *logger) Error(args ...interface{}) {
-	logrus.Error(l.generateMessage(args)...)
+	logrus.Error(l.generateMessage(args...)...)
 }
 
 func (l *logger) Errorf(format string, args ...interface{}) {
