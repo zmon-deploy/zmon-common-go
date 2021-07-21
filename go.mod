@@ -8,6 +8,7 @@ require (
 	github.com/influxdata/influxdb1-client v0.0.0-20200827194710-b269163b24ab
 	github.com/influxdata/line-protocol v0.0.0-20201012155213-5f565037cbc9
 	github.com/jackc/pgx/v4 v4.12.0 // indirect
+	github.com/jinzhu/now v1.1.2 // indirect
 	github.com/klauspost/compress v1.11.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/echo/v4 v4.1.17
@@ -23,6 +24,6 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	gorm.io/driver/mysql v1.0.4
-	gorm.io/driver/postgres v1.1.0
-	gorm.io/gorm v1.21.12
+	gorm.io/driver/postgres v1.0.8
+	gorm.io/gorm v1.21.3
 )
